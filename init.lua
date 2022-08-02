@@ -3,6 +3,10 @@ vim.cmd [[
   hi Search cterm=NONE ctermfg=yellow ctermbg=blue
   hi TabLineFill term=bold cterm=bold ctermbg=0
   hi StatusLine ctermbg=gray ctermfg=black
+  hi Pmenu ctermbg=black ctermfg=magenta
+  hi FloatBorder guifg=cyan guibg=#1f2335
+  hi NormalFloat guifg=cyan guibg=blue
+  hi MatchParen cterm=none ctermbg=black ctermfg=blue
   hi LineNr ctermfg=darkgrey
 
   autocmd InsertEnter * :set norelativenumber
@@ -30,8 +34,10 @@ require('packer').startup(function()
   use 'vim-airline/vim-airline-themes'
   use 'L3MON4D3/LuaSnip'
   use 'benfowler/telescope-luasnip.nvim'
-  use 'neovim/nvim-lspconfig'
+
+
   use 'glepnir/lspsaga.nvim'
+  use 'williamboman/nvim-lsp-installer'
   use 'hrsh7th/cmp-nvim-lsp'
   use 'hrsh7th/cmp-buffer'
   use 'hrsh7th/cmp-path'
@@ -39,8 +45,26 @@ require('packer').startup(function()
   use 'hrsh7th/nvim-cmp'
   use 'hrsh7th/cmp-copilot'
   use 'saadparwaiz1/cmp_luasnip'
+  use 'onsails/lspkind-nvim'
   use 'nvim-treesitter/nvim-treesitter'
-  use 'phaazon/hop.nvim'
+  use {
+    'neovim/nvim-lspconfig',
+    config = function() 
+      local servers = { 'tsserver', 'diagnosticls', 'tailwindcss', 'prismals' }
+      for _, lsp in pairs(servers) do
+        require('lspconfig')[lsp].setup {
+        on_attach = on_attach,
+        flags = {
+          debounce_text_changes = 1250,
+        }
+      }
+      end
+    end
+  }
+  use {
+    'phaazon/hop.nvim',
+    config = function() require('hop').setup() end
+  }
   use {
     'nvim-telescope/telescope.nvim', tag = '0.1.0',
     requires = { {'nvim-lua/plenary.nvim'} }
@@ -66,6 +90,7 @@ require('packer').startup(function()
   } 
  end)
 
+require('hop').setup()
 
 local set = vim.opt
 
@@ -133,4 +158,145 @@ keymap('n','<leader>fb', '<cmd>lua require(\'telescope.builtin\').buffers()<cr>'
 keymap('n','<leader>fh', '<cmd>lua require(\'telescope.builtin\').help_tags()<cr>', { noremap = true})
 
 
+-- setup lsp
+local servers = { 'tsserver', 'diagnosticls', 'tailwindcss', 'prismals' }
+local capabilities = require('cmp_nvim_lsp').update_capabilities(vim.lsp.protocol.make_client_capabilities())
+
+for _, lsp in pairs(servers) do
+  require('lspconfig')[lsp].setup {
+    capabilities = capabilities,
+    on_attach = on_attach,
+    flags = {
+      debounce_text_changes = 1250,
+    }
+  }
+end
+
+vim.o.updatetime = 250
+vim.cmd [[autocmd! CursorHold,CursorHoldI * lua vim.diagnostic.open_float(nil, {focus=false})]]
+
+local on_attach = function(client, bufnr)
+vim.api.nvim_create_autocmd("CursorHold", {
+  buffer = bufnr,
+  callback = function()
+    local opts = {
+      focusable = false,
+      close_events = { "BufLeave", "CursorMoved", "InsertEnter", "FocusLost" },
+      border = 'rounded',
+      source = 'always',
+      prefix = ' ',
+      scope = 'cursor',
+    }
+    vim.diagnostic.open_float(nil, opts)
+  end
+})
+end
+
+vim.diagnostic.config({
+	virtual_text = false,
+	signs = true,
+	float = {
+		border = "single",
+		format = function(diagnostic)
+			return string.format(
+				"%s (%s) [%s]",
+				diagnostic.message,
+				diagnostic.source,
+				diagnostic.code or diagnostic.user_data.lsp.code
+			)
+		end,
+	},
+})
+
+-- setup nvim_cmp
+
+local has_words_before = function()
+  local line, col = unpack(vim.api.nvim_win_get_cursor(0))
+  return col ~= 0 and vim.api.nvim_buf_get_lines(0, line - 1, line, true)[1]:sub(col, col):match("%s") == nil
+end
+
+local luasnip = require("luasnip")
+local lspkind = require('lspkind')
+local cmp = require'cmp'
+
+  cmp.setup({
+
+    snippet = {
+      expand = function(args)
+        require('luasnip').lsp_expand(args.body)
+      end,
+    },
+
+    mapping = {
+      ['<C-b>'] = cmp.mapping(cmp.mapping.scroll_docs(-4), { 'i', 'c' }),
+      ['<C-f>'] = cmp.mapping(cmp.mapping.scroll_docs(4), { 'i', 'c' }),
+      ['<C-o'] = cmp.mapping(cmp.mapping.complete(), { 'i', 'c' }),
+      ['<C-y>'] = cmp.config.disable, 
+      ['<C-e>'] = cmp.mapping({
+        i = cmp.mapping.abort(),
+        c = cmp.mapping.close(),
+      }),
+      ['<CR>'] = cmp.mapping.confirm({ select=false  }),
+      ["<Tab>"] = cmp.mapping(function(fallback)
+        if cmp.visible() then
+          cmp.select_next_item()
+        elseif luasnip.expand_or_jumpable() then
+          luasnip.expand_or_jump()
+        elseif has_words_before() then
+          cmp.complete()
+        else
+          fallback()
+        end
+      end, { "i", "s" }),
+      ["<S-Tab>"] = cmp.mapping(function(fallback)
+        if cmp.visible() then
+          cmp.select_prev_item()
+        elseif luasnip.jumpable(-1) then
+          luasnip.jump(-1)
+        else
+          fallback()
+        end
+      end, { "i", "s" }),
+    },
+
+    formatting = {
+      format = lspkind.cmp_format({
+        with_text = true,
+        mode = 'text',
+         menu = ({
+           luasnip = "[LuaSnip]",
+           copilot = "[Copilot]",
+           buffer = "[Buffer]",
+           nvim_lsp = "[LSP]",
+           cmp_tabnine = "[TabNine]",
+           nvim_lua = "[Lua]",
+           latex_symbols = "[Latex]",
+         })
+      }),
+    },
+
+    sources = cmp.config.sources({
+      { name = 'luasnip' },
+      { name = 'copilot' },
+      { name = 'cmp_tabnine' },
+      { name = 'nvim_lsp' },
+    }, {
+      { name = 'buffer' },
+    }
+    )
+  })
+
+  cmp.setup.cmdline('/', {
+    sources = {
+      { name = 'buffer' }
+    }
+  })
+
+  cmp.setup.cmdline(':', {
+    sources = cmp.config.sources({
+      { name = 'path' }
+    }, {
+      { name = 'cmdline' }
+    })
+  })
 
