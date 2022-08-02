@@ -1,16 +1,75 @@
+
+vim.cmd [[
+  hi Search cterm=NONE ctermfg=yellow ctermbg=blue
+  hi TabLineFill term=bold cterm=bold ctermbg=0
+  hi StatusLine ctermbg=gray ctermfg=black
+  hi LineNr ctermfg=darkgrey
+
+  autocmd InsertEnter * :set norelativenumber
+  autocmd InsertLeave * :set relativenumber
+
+  if has('persistent_undo')      
+    set undofile                 
+    set undodir=$HOME/.vim/undo  
+  endif
+]]
+
+
 -- plugins
 require('packer').startup(function()
-use 'wbthomason/packer.nvim'
-use 'preservim/nerdtree'
-  -- vim-prettier
+  use 'wbthomason/packer.nvim'
+  use 'tpope/vim-fugitive'
+  use 'tpope/vim-surround'
+  use 'preservim/nerdtree'
   use 'prettier/vim-prettier'
+  use 'mattn/emmet-vim'
+  use 'github/copilot.vim'
+  use 'BurntSushi/ripgrep'
+  use 'mhinz/vim-startify'
+  use 'vim-airline/vim-airline'
+  use 'vim-airline/vim-airline-themes'
+  use 'L3MON4D3/LuaSnip'
+  use 'benfowler/telescope-luasnip.nvim'
+  use 'neovim/nvim-lspconfig'
+  use 'glepnir/lspsaga.nvim'
+  use 'hrsh7th/cmp-nvim-lsp'
+  use 'hrsh7th/cmp-buffer'
+  use 'hrsh7th/cmp-path'
+  use 'hrsh7th/cmp-cmdline'
+  use 'hrsh7th/nvim-cmp'
+  use 'hrsh7th/cmp-copilot'
+  use 'saadparwaiz1/cmp_luasnip'
+  use 'nvim-treesitter/nvim-treesitter'
+  use 'phaazon/hop.nvim'
+  use {
+    'nvim-telescope/telescope.nvim', tag = '0.1.0',
+    requires = { {'nvim-lua/plenary.nvim'} }
+  }
+ 
+  use {
+    'lewis6991/gitsigns.nvim', 
+    requires = { 'nvim-lua/plenary.nvim' },
+    config = function() require('gitsigns').setup() end
+  }
 
-end)
+  use {
+    'tzachar/cmp-tabnine', 
+    run='./install.sh', 
+    requires = {'hrsh7th/nvim-cmp'},
+    config = function() require('gcmp_tabnine.config').setup({
+      max_lines = 1000;
+      max_num_results = 20;
+      sort = true;
+      run_on_every_keystroke = true;
+      snippet_placeholder = '..';
+    }) end
+  } 
+ end)
+
 
 local set = vim.opt
--- Set the behavior of tab
+
 set.hidden = true
--- vim.opt.syntax = true
 set.tabstop = 2
 set.shiftwidth = 2
 set.softtabstop = 2
@@ -20,25 +79,18 @@ set.number = true
 set.mouse = 'a'
 set.relativenumber = true
 
--- leader mappings
--- options
 vim.g.mapleader = " "
+vim.g.airline_theme='minimalist'
 
-
-
-vim.o.guicursor = 'n-v-c:block,i-ci-vem:ver25,r-cr-o:hor20,a:blinkwait700-blinkoff400-blinkon250-Cursor/lCursor'
--- keymaps
 local keymap = vim.api.nvim_set_keymap
--- window navigation
+
 keymap('n', '<C-j>', '<C-w>j', { noremap = true})
 keymap('n', '<C-k>', '<C-w>k', { noremap = true})
 keymap('n', '<C-h>', '<C-w>h', { noremap = true})
 keymap('n', '<C-l>', '<C-w>l', { noremap = true}) 
 
 keymap('n', '<Leader><Leader>h', ':set hlsearch!<CR>', { noremap = true, silent= true })
---keymap('n', '<Leader>w', ':w!<CR>', { noremap = true})
 keymap('n', '<Leader>%', ':source %<CR>', { noremap = true})
---keymap('i', 'jj', '<ESC>', { noremap = true})
 
 -- quit
 keymap('n', '<Leader>q', ':q<CR>', { noremap = true})
@@ -58,12 +110,6 @@ keymap('n', '<C-k>', '<C-w>k', { noremap = true})
 keymap('n', '<C-h>', '<C-w>h', { noremap = true})
 keymap('n', '<C-l>', '<C-w>l', { noremap = true}) 
 
--- resize windows
-keymap('n', '<M-j>', ':resize -2<CR>', { noremap = true})
-keymap('n', '<M-k>', ':resize +2<CR>', { noremap = true})
-keymap('n', '<M-h>', ':vertical resize -2<CR>', { noremap = true})
-keymap('n', '<M-;>', ':vertical resize +2<CR>', { noremap = true}) -- todo l not working - why?
-
 -- easy caps
 keymap('i', '<C-u>', '<ESC>viwUl', { noremap = true})
 keymap('n', '<C-u>', 'viwU<Esc>', { noremap = true})
@@ -80,20 +126,11 @@ keymap('n', 'gbs', ':buffers<CR>:vert belowright sb<Space>', { noremap = true})
 keymap('v', '<TAB>', '>gv', { noremap = true})
 keymap('v', '<S-TAB>', '<gv', { noremap = true})
 
--- vim emmet
--- keymap('i', '<C-e>,' '<C-y>,', { noremap = true})
-
--- sessions
-keymap('n', '<C-s>',':SSave! app<CR>', { noremap = true})
-
 -- telescope
 keymap('n','<leader>ff', '<cmd>lua require(\'telescope.builtin\').find_files()<cr>', { noremap = true})
 keymap('n','<leader>fg', '<cmd>lua require(\'telescope.builtin\').live_grep()<cr>', { noremap = true})
 keymap('n','<leader>fb', '<cmd>lua require(\'telescope.builtin\').buffers()<cr>', { noremap = true})
 keymap('n','<leader>fh', '<cmd>lua require(\'telescope.builtin\').help_tags()<cr>', { noremap = true})
-keymap(
-  "n",
-  "<leader>fi",
-  ":Telescope file_browser<cr>",
-  { noremap = true }
-)
+
+
+
