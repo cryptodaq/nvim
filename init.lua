@@ -1,4 +1,3 @@
-
 vim.cmd [[
 
   hi Search cterm=NONE ctermfg=yellow ctermbg=blue
@@ -65,11 +64,13 @@ require('packer').startup(function()
   use 'hrsh7th/cmp-copilot'
   use 'saadparwaiz1/cmp_luasnip'
   use 'onsails/lspkind-nvim'
-      use {
+
+  use {
         'nvim-treesitter/nvim-treesitter',
         run = ':TSUpdate'
     }
   use 'JoosepAlviste/nvim-ts-context-commentstring'
+
   use {
     'neovim/nvim-lspconfig',
     config = function() 
@@ -84,23 +85,19 @@ require('packer').startup(function()
       end
     end
   }
+
   use {
     'phaazon/hop.nvim',
     config = function() require('hop').setup() end
   }
-use {
-  "folke/trouble.nvim",
-  requires = "kyazdani42/nvim-web-devicons",
-  config = function()
-    require("trouble").setup {
-      -- your configuration comes here
-      -- or leave it empty to use the default settings
-      -- refer to the configuration section below
-    }
-  end
-}
 
-
+  use {
+    "folke/trouble.nvim",
+    requires = "kyazdani42/nvim-web-devicons",
+    config = function()
+      require("trouble").setup {}
+    end
+  }
 
   use {
     'nvim-telescope/telescope.nvim', tag = '0.1.0',
@@ -125,26 +122,26 @@ use {
       snippet_placeholder = '..';
     }) end
   } 
- end)
+
+end)
 
 require('hop').setup()
+
 require("nvim-lsp-installer").setup {}
+
 require'nvim-treesitter.configs'.setup {
-  ensure_installed = { "typescript", "rust" },
+  ensure_installed = { "typescript", "rust", "lua", "html", "css", "javascript", "json", "bash", "python", "graphql", "yaml", "toml", "regex", "tsx", "astro" },
   context_commentstring = {
     enable = true,
-    config = {
-      }
+    config = {}
   },
-indent = {
+  indent = {
     enable = true
   },
-highlight = {
-    -- `false` will disable the whole extension
+  highlight = {
     enable = true,
+  }
 }
-}
-
 
 
 local set = vim.opt
