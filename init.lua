@@ -1,3 +1,5 @@
+-- vimscript still to migrate to lua
+
 vim.cmd [[
 
   hi Search cterm=NONE ctermfg=yellow ctermbg=blue
@@ -31,7 +33,9 @@ vim.cmd [[
 
 au! BufRead,BufNewFile *.astro set filetype=astro
 
-echo nvim_treesitter#statusline(90)  
+let NERDTreeQuitOnOpen=1
+" Exit Vim if NERDTree is the only window remaining in the only tab.
+autocmd BufEnter * if tabpagenr('$') == 1 && winnr('$') == 1 && exists('b:NERDTree') && b:NERDTree.isTabTree() | quit | endif
 
 ]]
 
@@ -205,7 +209,7 @@ keymap('n', '<Leader>w', ':w<CR>', { noremap = true})
 keymap('n', '<Leader>q', ':q<CR>', { noremap = true})
 
 -- nerdtree
-keymap('n', '<C-n>', ':NERDTreeToggle<CR>', { noremap = true})
+keymap('n', '<C-n>', ':NERDTree<CR>', { noremap = true})
 
 -- hop
 keymap('n', '<Leader>h', ':HopWord<CR>', { noremap = true})
