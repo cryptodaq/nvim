@@ -36,13 +36,13 @@ au! BufRead,BufNewFile *.astro set filetype=astro
 let NERDTreeQuitOnOpen=1
 " Exit Vim if NERDTree is the only window remaining in the only tab.
 autocmd BufEnter * if tabpagenr('$') == 1 && winnr('$') == 1 && exists('b:NERDTree') && b:NERDTree.isTabTree() | quit | endif
-
 ]]
 
 
 -- plugins
 require('packer').startup(function()
   use 'wbthomason/packer.nvim'
+  use 'lewis6991/impatient.nvim'
   use 'ElPiloto/telescope-vimwiki.nvim'
   use 'tpope/vim-fugitive'
   use 'tpope/vim-surround'
@@ -51,6 +51,7 @@ require('packer').startup(function()
   use 'prettier/vim-prettier'
   use 'mattn/emmet-vim'
   use 'github/copilot.vim'
+  use "rafamadriz/friendly-snippets"
   use 'BurntSushi/ripgrep'
   use 'mhinz/vim-startify'
   use 'vim-airline/vim-airline'
@@ -129,7 +130,11 @@ require('packer').startup(function()
 
 end)
 
+require('impatient')
+
 require('hop').setup()
+
+require("luasnip.loaders.from_vscode").lazy_load()
 
 require("nvim-lsp-installer").setup {}
 
@@ -209,7 +214,7 @@ keymap('n', '<Leader>w', ':w<CR>', { noremap = true})
 keymap('n', '<Leader>q', ':q<CR>', { noremap = true})
 
 -- nerdtree
-keymap('n', '<C-n>', ':NERDTree<CR>', { noremap = true})
+keymap('n', '<C-n>', ':NERDTreeToggle<CR>', { noremap = true})
 
 -- hop
 keymap('n', '<Leader>h', ':HopWord<CR>', { noremap = true})
@@ -402,8 +407,8 @@ local cmp = require'cmp'
         with_text = true,
         mode = 'text',
          menu = ({
-           luasnip = "[LuaSnip]",
            copilot = "[Copilot]",
+           luasnip = "[LuaSnip]",
            buffer = "[Buffer]",
            nvim_lsp = "[LSP]",
            cmp_tabnine = "[TabNine]",
@@ -414,8 +419,8 @@ local cmp = require'cmp'
     },
 
     sources = cmp.config.sources({
-      { name = 'luasnip' },
       { name = 'copilot' },
+      { name = 'luasnip' },
       { name = 'cmp_tabnine' },
       { name = 'nvim_lsp' },
     }, {
@@ -439,5 +444,4 @@ local cmp = require'cmp'
   })
 
 
--- snippets
 
