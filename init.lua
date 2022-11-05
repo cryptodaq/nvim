@@ -33,9 +33,6 @@ vim.cmd [[
 
 au! BufRead,BufNewFile *.astro set filetype=astro
 
-let NERDTreeQuitOnOpen=1
-" Exit Vim if NERDTree is the only window remaining in the only tab.
-autocmd BufEnter * if tabpagenr('$') == 1 && winnr('$') == 1 && exists('b:NERDTree') && b:NERDTree.isTabTree() | quit | endif
 ]]
 
 
@@ -47,7 +44,6 @@ require('packer').startup(function()
   use 'tpope/vim-fugitive'
   use 'tpope/vim-surround'
   use 'tpope/vim-commentary'
-  use 'preservim/nerdtree'
   use 'prettier/vim-prettier'
   use 'mattn/emmet-vim'
   use 'github/copilot.vim'
@@ -69,7 +65,13 @@ require('packer').startup(function()
   use 'hrsh7th/cmp-copilot'
   use 'saadparwaiz1/cmp_luasnip'
   use 'onsails/lspkind-nvim'
-
+use {
+  'nvim-tree/nvim-tree.lua',
+  requires = {
+    'nvim-tree/nvim-web-devicons', -- optional, for file icons
+  },
+  tag = 'nightly' -- optional, updated every week. (see issue #1193)
+}
   use {
         'nvim-treesitter/nvim-treesitter',
         run = ':TSUpdate'
@@ -130,7 +132,22 @@ require('packer').startup(function()
 
 end)
 
+-- disable netrw at the very start of your init.lua (strongly advised)
+vim.g.loaded_netrw = 1
+vim.g.loaded_netrwPlugin = 1
+
+-- set termguicolors to enable highlight groups
+-- vim.opt.termguicolors = true
+
 require('impatient')
+
+require("nvim-tree").setup {
+  actions = {
+    open_file = {
+      quit_on_open = true
+    }
+  }
+}
 
 require('hop').setup()
 
@@ -153,13 +170,16 @@ require'nvim-treesitter.configs'.setup {
 }
 
 
+-- empty setup using defaults
 local set = vim.opt
 
+--set.cmdheight = 0
 set.hidden = true
 set.tabstop = 2
 set.shiftwidth = 2
 set.softtabstop = 2
 set.expandtab = true
+set.splitbelow = true
 set.splitright = true
 set.number = true
 set.mouse = 'a'
@@ -213,8 +233,8 @@ keymap('n', '<Leader>w', ':w<CR>', { noremap = true})
 -- quit
 keymap('n', '<Leader>q', ':q<CR>', { noremap = true})
 
--- nerdtree
-keymap('n', '<C-n>', ':NERDTreeToggle<CR>', { noremap = true})
+-- nvim-tree
+keymap('n', '<C-n>', ':NvimTreeToggle<CR>', { noremap = true})
 
 -- hop
 keymap('n', '<Leader>h', ':HopWord<CR>', { noremap = true})
@@ -266,12 +286,19 @@ keymap('v', '<TAB>', '>gv', { noremap = true})
 keymap('v', '<S-TAB>', '<gv', { noremap = true})
 
 -- telescope
---keymap('n','<leader>ff', '<cmd>lua require(\'telescope.builtin\').find_files({ find_command = {\'rg\', \'--files\', \'--hidden\', \'-g\', \'!.git\' }})<cr>', { noremap = true})
-keymap('n','<leader>ff', '<cmd>lua require(\'telescope.builtin\').find_files({ hidden = true, respect_gitignore = true})<cr>', { noremap = true})
+keymap('n','<leader>ff', '<cmd>lua require(\'telescope.builtin\').find_files({ find_command = {\'rg\', \'--files\', \'--hidden\', \'-g\', \'!.git\' }})<cr>', { noremap = true})
+--keymap('n','<leader>ff', '<cmd>lua require(\'telescope.builtin\').find_files({ hidden = true, respect_gitignore = true})<cr>', { noremap = true})
 keymap('n','<leader>fg', '<cmd>lua require(\'telescope.builtin\').live_grep()<cr>', { noremap = true})
 keymap('n','<leader>fb', '<cmd>lua require(\'telescope.builtin\').buffers()<cr>', { noremap = true})
 keymap('n','<leader>fh', '<cmd>lua require(\'telescope.builtin\').help_tags()<cr>', { noremap = true})
 keymap('n','<leader>fd', '<cmd>lua require(\'telescope.builtin\').diagnostics()<cr>', { noremap = true})
+
+
+
+-- terminal
+vim.cmd([[tnoremap <leader>jj <C-\><C-n>]])
+
+
 -- setup vimwiki
 require('telescope').load_extension('vw')
 
@@ -292,7 +319,7 @@ telescope.setup {
 
 -- setup lsp
 local servers = { 'tsserver', 'diagnosticls', 'tailwindcss', 'prismals', 'astro' }
-local capabilities = require('cmp_nvim_lsp').update_capabilities(vim.lsp.protocol.make_client_capabilities())
+local capabilities = require('cmp_nvim_lsp').default_capabilities(vim.lsp.protocol.make_client_capabilities())
 
 for _, lsp in pairs(servers) do
   require('lspconfig')[lsp].setup {
