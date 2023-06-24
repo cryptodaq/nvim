@@ -31,8 +31,10 @@ vim.cmd [[
       autocmd BufRead,BufNewFile diary.wiki VimwikiDiaryGenerateLinks
   augroup end
 
-au! BufRead,BufNewFile *.astro set filetype=astro
+  au BufNewFile ~/vimwiki/diary/*.md :silent 0r !~/.vim/bin/generate-diary-template.py '%'
 
+au! BufRead,BufNewFile *.astro set filetype=astro
+set clipboard+=unnamedplus
 ]]
 
 
@@ -81,7 +83,7 @@ use {
   use {
     'neovim/nvim-lspconfig',
     config = function() 
-      local servers = { 'tsserver', 'diagnosticls', 'tailwindcss', 'prismals', 'astro' }
+      local servers = { 'tsserver', 'diagnosticls', 'tailwindcss', 'prismals', 'astro', 'eslint' }
       for _, lsp in pairs(servers) do
         require('lspconfig')[lsp].setup {
         on_attach = on_attach,
@@ -110,26 +112,29 @@ use {
     'nvim-telescope/telescope.nvim', tag = '0.1.0',
     requires = { {'nvim-lua/plenary.nvim'} }
   }
+
+  use {
+'epwalsh/obsidian.nvim', 
+    requires = { 'nvim-lua/plenary.nvim' }
+  }
+
  
+use({
+  "jackMort/ChatGPT.nvim",
+    config = function()
+      require("chatgpt").setup()
+    end,
+    requires = {
+      "MunifTanjim/nui.nvim",
+      "nvim-lua/plenary.nvim",
+      "nvim-telescope/telescope.nvim"
+    }
+})
   use {
     'lewis6991/gitsigns.nvim', 
     requires = { 'nvim-lua/plenary.nvim' },
     config = function() require('gitsigns').setup() end
   }
-
-  use {
-    'tzachar/cmp-tabnine', 
-    run='./install.sh', 
-    requires = {'hrsh7th/nvim-cmp'},
-    config = function() require('cmp_tabnine.config').setup({
-      max_lines = 1000;
-      max_num_results = 20;
-      sort = true;
-      run_on_every_keystroke = true;
-      snippet_placeholder = '..';
-    }) end
-  } 
-
 end)
 
 -- disable netrw at the very start of your init.lua (strongly advised)
@@ -170,6 +175,14 @@ require'nvim-treesitter.configs'.setup {
 }
 
 
+require('obsidian').setup {
+  dir = '~/vault',
+  completion = {
+    nvim_cmp = true, -- if using nvim-cmp, otherwise set to false
+  },
+  disable_frontmatter = true, -- Do not format note
+}
+
 -- empty setup using defaults
 local set = vim.opt
 
@@ -194,6 +207,7 @@ set.directory = '~/.vim-tmp,~/.tmp,~/tmp,/var/tmp,/tmp '
 
 vim.g.mapleader = " "
 vim.g.airline_theme='minimalist'
+vim.g.copilot_node_command = "~/.nvm/versions/node/v16.15.0/bin/node"
 
 local keymap = vim.api.nvim_set_keymap
 local opts = { noremap=true, silent=true }
@@ -293,7 +307,10 @@ keymap('n','<leader>fb', '<cmd>lua require(\'telescope.builtin\').buffers()<cr>'
 keymap('n','<leader>fh', '<cmd>lua require(\'telescope.builtin\').help_tags()<cr>', { noremap = true})
 keymap('n','<leader>fd', '<cmd>lua require(\'telescope.builtin\').diagnostics()<cr>', { noremap = true})
 
+-- obsidian
 
+keymap('n','<leader>ot', ':ObsidianToday<cr>', { noremap = true})
+keymap('n','<leader>oy', ':ObsidianYesterday<cr>', { noremap = true})
 
 -- terminal
 vim.cmd([[tnoremap <leader>jj <C-\><C-n>]])
@@ -318,7 +335,7 @@ telescope.setup {
 
 
 -- setup lsp
-local servers = { 'tsserver', 'diagnosticls', 'tailwindcss', 'prismals', 'astro' }
+local servers = { 'tsserver', 'diagnosticls', 'tailwindcss', 'prismals', 'astro', 'eslint' }
 local capabilities = require('cmp_nvim_lsp').default_capabilities(vim.lsp.protocol.make_client_capabilities())
 
 for _, lsp in pairs(servers) do
@@ -339,6 +356,10 @@ require('lspconfig')['astro'].setup{
     -- Server-specific settings...
     settings = {
     }
+}
+
+require('lspconfig')['eslint'].setup {
+  capabilities = capabilities
 }
 
 vim.lsp.set_log_level("debug")
@@ -438,7 +459,6 @@ local cmp = require'cmp'
            luasnip = "[LuaSnip]",
            buffer = "[Buffer]",
            nvim_lsp = "[LSP]",
-           cmp_tabnine = "[TabNine]",
            nvim_lua = "[Lua]",
            latex_symbols = "[Latex]",
          })
@@ -448,7 +468,6 @@ local cmp = require'cmp'
     sources = cmp.config.sources({
       { name = 'copilot' },
       { name = 'luasnip' },
-      { name = 'cmp_tabnine' },
       { name = 'nvim_lsp' },
     }, {
       { name = 'buffer' },
